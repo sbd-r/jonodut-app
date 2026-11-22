@@ -1,0 +1,18 @@
+/* জনদূত app only: colour themes, the theme button and reserved ad places. */
+html[data-jd-theme="light"] { --bg:#f3f6f4; --card:#ffffff; --ink:#14231c; --mut:#5c6b63; --line:#d9e2dc; --g:#0b6b4a; --gd:#084a34; --hd:#0d1814; --amb:#e8a317; color-scheme: light; }
+html[data-jd-theme="night"] { --bg:#0b1210; --card:#13201a; --ink:#e8f0eb; --mut:#a7b8ae; --line:#24352c; --g:#35b985; --gd:#2a9a6e; --hd:#050a08; --amb:#f2b233; color-scheme: dark; }
+html[data-jd-theme="blue"]  { --bg:#eef4fb; --card:#ffffff; --ink:#0f2238; --mut:#4f6480; --line:#d5e0ee; --g:#1f5fbf; --gd:#174a96; --hd:#0b2a52; --amb:#f2b233; color-scheme: light; }
+html[data-jd-theme="cream"] { --bg:#fbf6ea; --card:#fffdf7; --ink:#2a2112; --mut:#7a6a4f; --line:#e8dcc2; --g:#8a5a00; --gd:#6b4500; --hd:#3d2b08; --amb:#e8a317; color-scheme: light; }
+
+#jd-theme-btn.jd-hbtn { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; background: rgba(255,255,255,.16); box-shadow: none; font-size: 19px; }
+#jd-theme-btn { position: fixed; right: 14px; bottom: 14px; z-index: 60; width: 50px; height: 50px; border: 0; border-radius: 50%; background: var(--g); color: #fff; font-size: 22px; line-height: 1; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+#jd-theme-btn:active { transform: scale(.94); }
+.jd-scrim { position: fixed; inset: 0; z-index: 61; background: rgba(0,0,0,.45); }
+.jd-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 62; max-width: 560px; margin: 0 auto; padding: 16px 18px calc(16px + env(safe-area-inset-bottom)); border-radius: 18px 18px 0 0; background: var(--card); color: var(--ink); font-family: "Noto Sans Bengali", system-ui, sans-serif; box-shadow: 0 -8px 24px rgba(0,0,0,.2); }
+.jd-sheet h2 { font-size: 18px; margin: 0 0 8px; }
+.jd-sheet button { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 50px; padding: 0 4px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); font-size: 16px; text-align: left; }
+.jd-sheet button[aria-current="true"] { font-weight: 800; color: var(--g); }
+
+/* ad places: hidden until ads are switched on in native.js */
+.jd-ad { display: none; }
+html[data-jd-ads="on"] .jd-ad { display: block; min-height: 66px; margin: 14px auto; max-width: 760px; }
