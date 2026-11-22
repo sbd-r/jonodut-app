@@ -74,8 +74,16 @@
   /* ---------- extra css (kept here so only this file changes) ---------- */
   var st = document.createElement("style");
   st.textContent =
-    "#jd-share-btn.jd-hbtn{position:absolute;top:10px;left:10px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:19px;line-height:1;z-index:5}" +
+    "#jd-share-btn{display:flex;align-items:center;justify-content:center;padding:0}#jd-share-btn.jd-hbtn{position:absolute;top:10px;left:10px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:19px;line-height:1;z-index:5}" +
     "#jd-share-btn{position:fixed;left:14px;bottom:14px;z-index:60;width:50px;height:50px;border:0;border-radius:50%;background:var(--g);color:#fff;font-size:22px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.25)}" +
+    ".jd-shr .jd-shead{display:flex;gap:12px;align-items:center;margin-bottom:12px}.jd-shr .jd-shead h2{margin:0 0 2px}.jd-shr .jd-shead p{margin:0;font-size:13px;line-height:1.5;color:var(--mut)}" +
+    ".jd-shr{max-height:92vh;overflow-y:auto}" +
+    ".jd-shr .jd-qr{display:flex;gap:14px;align-items:center;margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}" +
+    ".jd-shr .jd-qrb{flex:none;padding:6px;border-radius:10px;background:#fff;line-height:0}.jd-shr .jd-qr b{font-size:15px}.jd-shr .jd-qr p{margin:4px 0 0;font-size:12.5px;line-height:1.5;color:var(--mut)}" +
+    ".jd-shr .jd-sg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}" +
+    ".jd-shr .jd-sg button{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;min-height:72px;padding:6px 2px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink)}" +
+    ".jd-shr .jd-sg i{display:flex;font-style:normal;color:var(--g);font-size:26px;line-height:1}.jd-shr .jd-sg small{font-size:12px;line-height:1.2;text-align:center}" +
+    ".jd-shr .jd-sx{justify-content:center;border:0;color:var(--mut);font-size:15px}" +
     ".jd-upd{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:70;max-width:560px;margin:0 auto;padding:12px 14px;border-radius:14px;background:#0b6b4a;color:#fff;border:2px solid #e8a317;box-shadow:0 8px 24px rgba(0,0,0,.35);font-family:'Noto Sans Bengali',system-ui,sans-serif;display:flex;gap:10px;align-items:center;flex-wrap:wrap}" +
     ".jd-upd b{flex:1 1 100%;font-size:15px}.jd-upd span{flex:1 1 100%;font-size:13px;opacity:.92}" +
     ".jd-upd a,.jd-upd button{min-height:40px;padding:0 16px;border:0;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;font-family:inherit}" +
@@ -98,15 +106,174 @@
   /* ---------- share the app ---------- */
   var sbtn = document.createElement("button");
   sbtn.id = "jd-share-btn"; sbtn.type = "button"; sbtn.setAttribute("aria-label", "অ্যাপ শেয়ার করুন");
-  sbtn.textContent = "📤";
+  sbtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6 15.4 6.4M8.6 13.4l6.8 4.2" fill="none"/></svg>';
   var hd = document.querySelector("header");
   if (hd) { sbtn.className = "jd-hbtn"; hd.appendChild(sbtn); } else { document.body.appendChild(sbtn); }
-  sbtn.addEventListener("click", function () {
-    var text = "📢 জনদূত: জানুন অধিকার, লিখুন দরখাস্ত, পাঠান সঠিক দপ্তরে।\n\n📲 অ্যান্ড্রয়েড অ্যাপ: " + APK_URL + "\n🌐 ওয়েবসাইট: " + SITE;
-    nativeShare({ title: "জনদূত", text: text }).catch(function () {
-      try { navigator.clipboard.writeText(text); alert("লিংক কপি হয়েছে"); } catch (e) {}
+  /* ---------- tiny offline QR code maker (byte mode, level L, versions 1-9) ---------- */
+  function qrMatrix(text) {
+    var bytes = unescape(encodeURIComponent(text)).split("").map(function (c) { return c.charCodeAt(0); });
+    /* version: [data codewords per block, ec per block, blocks] */
+    var VER = [null, [19, 7, 1], [34, 10, 1], [55, 15, 1], [80, 20, 1], [108, 26, 1], [68, 18, 2], [78, 20, 2], [97, 24, 2], [116, 30, 2]];
+    var ALIGN = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34], [6, 22, 38], [6, 24, 42], [6, 26, 46]];
+    var v = 0, i, j;
+    for (i = 1; i <= 9; i++) { if (bytes.length + 2 <= VER[i][0] * VER[i][2]) { v = i; break; } }
+    if (!v) return null;
+    var cfg = VER[v], dpb = cfg[0], epb = cfg[1], nb = cfg[2], total = dpb * nb;
+    /* bit stream */
+    var bits = [];
+    function put(val, n) { for (var k = n - 1; k >= 0; k--) bits.push((val >> k) & 1); }
+    put(4, 4); put(bytes.length, 8);
+    bytes.forEach(function (b) { put(b, 8); });
+    put(0, Math.min(4, total * 8 - bits.length));
+    while (bits.length % 8) bits.push(0);
+    var data = [];
+    for (i = 0; i < bits.length; i += 8) { var x = 0; for (j = 0; j < 8; j++) x = (x << 1) | bits[i + j]; data.push(x); }
+    for (var pad = 0; data.length < total; pad++) data.push(pad % 2 ? 17 : 236);
+    /* Reed-Solomon */
+    var EXP = [], LOG = [], g = 1;
+    for (i = 0; i < 255; i++) { EXP[i] = g; LOG[g] = i; g <<= 1; if (g & 256) g ^= 285; }
+    function mul(a, b) { return a && b ? EXP[(LOG[a] + LOG[b]) % 255] : 0; }
+    var gen = [1];
+    for (i = 0; i < epb; i++) {
+      var ng = new Array(gen.length + 1).fill(0);
+      for (j = 0; j < gen.length; j++) { ng[j] ^= gen[j]; ng[j + 1] ^= mul(gen[j], EXP[i]); }
+      gen = ng;
+    }
+    var blocks = [], ecs = [];
+    for (i = 0; i < nb; i++) {
+      var d = data.slice(i * dpb, (i + 1) * dpb), r = new Array(epb).fill(0);
+      d.forEach(function (b) {
+        var f = b ^ r[0]; r.shift(); r.push(0);
+        for (var k = 0; k < epb; k++) r[k] ^= mul(gen[k + 1], f);
+      });
+      blocks.push(d); ecs.push(r);
+    }
+    var all = [];
+    for (i = 0; i < dpb; i++) blocks.forEach(function (b) { all.push(b[i]); });
+    for (i = 0; i < epb; i++) ecs.forEach(function (b) { all.push(b[i]); });
+    var stream = [];
+    all.forEach(function (b) { for (var k = 7; k >= 0; k--) stream.push((b >> k) & 1); });
+    /* matrix */
+    var n = 17 + 4 * v, M = [], F = [];
+    for (i = 0; i < n; i++) { M.push(new Array(n).fill(0)); F.push(new Array(n).fill(false)); }
+    function set(r, c, val) { M[r][c] = val ? 1 : 0; F[r][c] = true; }
+    function finder(r0, c0) {
+      for (var r = -1; r <= 7; r++) for (var c = -1; c <= 7; c++) {
+        var rr = r0 + r, cc = c0 + c;
+        if (rr < 0 || cc < 0 || rr >= n || cc >= n) continue;
+        var on = (r >= 0 && r <= 6 && (c === 0 || c === 6)) || (c >= 0 && c <= 6 && (r === 0 || r === 6)) || (r >= 2 && r <= 4 && c >= 2 && c <= 4);
+        set(rr, cc, on);
+      }
+    }
+    finder(0, 0); finder(0, n - 7); finder(n - 7, 0);
+    for (i = 8; i < n - 8; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+    var al = ALIGN[v];
+    al.forEach(function (ar) { al.forEach(function (ac) {
+      if (F[ar][ac]) return;
+      for (var r = -2; r <= 2; r++) for (var c = -2; c <= 2; c++) set(ar + r, ac + c, Math.max(Math.abs(r), Math.abs(c)) !== 1);
+    }); });
+    set(n - 8, 8, 1);
+    for (i = 0; i < 9; i++) { if (!F[8][i]) set(8, i, 0); if (!F[i][8]) set(i, 8, 0); }
+    for (i = 0; i < 8; i++) { if (!F[8][n - 1 - i]) set(8, n - 1 - i, 0); if (!F[n - 1 - i][8]) set(n - 1 - i, 8, 0); }
+    if (v >= 7) {
+      var rem = v;
+      for (i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >> 11) * 0x1F25);
+      var vi = (v << 12) | rem;
+      for (i = 0; i < 18; i++) { var bit = (vi >> i) & 1, a = Math.floor(i / 3), b = n - 11 + (i % 3); set(a, b, bit); set(b, a, bit); }
+    }
+    /* place data */
+    var idx = 0, up = true;
+    var places = [];
+    for (var col = n - 1; col > 0; col -= 2) {
+      if (col === 6) col--;
+      for (var k = 0; k < n; k++) {
+        var row = up ? n - 1 - k : k;
+        for (var cc2 = 0; cc2 < 2; cc2++) { var c2 = col - cc2; if (!F[row][c2]) places.push([row, c2]); }
+      }
+      up = !up;
+    }
+    var masks = [
+      function (r, c) { return (r + c) % 2 === 0; }, function (r) { return r % 2 === 0; }, function (r, c) { return c % 3 === 0; },
+      function (r, c) { return (r + c) % 3 === 0; }, function (r, c) { return (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0; },
+      function (r, c) { return (r * c) % 2 + (r * c) % 3 === 0; }, function (r, c) { return ((r * c) % 2 + (r * c) % 3) % 2 === 0; },
+      function (r, c) { return ((r + c) % 2 + (r * c) % 3) % 2 === 0; }
+    ];
+    function build(mk) {
+      var Q = M.map(function (row) { return row.slice(); });
+      places.forEach(function (p, t) { var bit = t < stream.length ? stream[t] : 0; Q[p[0]][p[1]] = bit ^ (masks[mk](p[0], p[1]) ? 1 : 0); });
+      /* format info: level L = 01 */
+      var fd = (1 << 3) | mk, fr = fd;
+      for (var z = 0; z < 10; z++) fr = (fr << 1) ^ ((fr >> 9) * 0x537);
+      var fmt = ((fd << 10) | fr) ^ 0x5412;
+      function fb(i) { return (fmt >> i) & 1; }
+      for (z = 0; z < 6; z++) Q[z][8] = fb(z);
+      Q[7][8] = fb(6); Q[8][8] = fb(7); Q[8][7] = fb(8);
+      for (z = 9; z < 15; z++) Q[8][14 - z] = fb(z);
+      for (z = 0; z < 8; z++) Q[8][n - 1 - z] = fb(z);
+      for (z = 8; z < 15; z++) Q[n - 15 + z][8] = fb(z);
+      return Q;
+    }
+    function penalty(Q) {
+      var p = 0, r, c, run, dark = 0;
+      for (r = 0; r < n; r++) { run = 1; for (c = 1; c < n; c++) { if (Q[r][c] === Q[r][c - 1]) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; } }
+      for (c = 0; c < n; c++) { run = 1; for (r = 1; r < n; r++) { if (Q[r][c] === Q[r - 1][c]) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; } }
+      for (r = 0; r < n - 1; r++) for (c = 0; c < n - 1; c++) { var s = Q[r][c]; if (s === Q[r][c + 1] && s === Q[r + 1][c] && s === Q[r + 1][c + 1]) p += 3; }
+      for (r = 0; r < n; r++) for (c = 0; c < n; c++) dark += Q[r][c];
+      p += Math.floor(Math.abs(dark * 20 - n * n * 10) / (n * n)) * 10;
+      return p;
+    }
+    var best = null, bp = 1e9;
+    for (var mk = 0; mk < 8; mk++) { var Q = build(mk), pp = penalty(Q); if (pp < bp) { bp = pp; best = Q; } }
+    return best;
+  }
+  function qrSvg(text, px) {
+    var Q = qrMatrix(text);
+    if (!Q) return "";
+    var n = Q.length, q = 3, d = "";
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (Q[r][c]) d += "M" + (c + q) + " " + (r + q) + "h1v1h-1z";
+    var s = n + q * 2;
+    return '<svg width="' + px + '" height="' + px + '" viewBox="0 0 ' + s + " " + s + '" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="' + s + '" height="' + s + '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>';
+  }
+
+  var MSG = "🛡️ জনদূত — আপনার কথা সঠিক দপ্তরে\n✅ অধিকার জানুন, দরখাস্ত লিখুন, সরাসরি পাঠান\n\n📲 অ্যান্ড্রয়েড অ্যাপ (ফ্রি): " + APK_URL + "\n🌐 ওয়েবসাইট: " + SITE;
+  function enc(x) { return encodeURIComponent(x); }
+  function openShare() {
+    close();
+    var scrim = document.createElement("div"); scrim.className = "jd-scrim";
+    var sheet = document.createElement("div"); sheet.className = "jd-sheet jd-shr";
+    var opts = [
+      ["💬", "হোয়াটসঅ্যাপ", function () { window.open("https://wa.me/?text=" + enc(MSG), "_blank"); }],
+      ["✈️", "টেলিগ্রাম", function () { window.open("https://t.me/share/url?url=" + enc(APK_URL) + "&text=" + enc("জনদূত — আপনার কথা সঠিক দপ্তরে। ফ্রি অ্যাপ:"), "_blank"); }],
+      ["📘", "ফেসবুক", function () { window.open("https://www.facebook.com/sharer/sharer.php?u=" + enc(SITE), "_blank"); }],
+      ["✉️", "এসএমএস", function () { location.href = "sms:?&body=" + enc(MSG); }],
+      ["📧", "ইমেইল", function () { location.href = "mailto:?subject=" + enc("জনদূত অ্যাপ") + "&body=" + enc(MSG); }],
+      ["📋", "লিংক কপি", function (btn) {
+        var done = function () { var t = btn.querySelector("small"); t.textContent = "কপি হয়েছে ✅"; };
+        try { navigator.clipboard.writeText(MSG).then(done, done); } catch (e) {
+          var ta = document.createElement("textarea"); ta.value = MSG; document.body.appendChild(ta); ta.select();
+          try { document.execCommand("copy"); } catch (x) {} ta.remove(); done();
+        }
+      }],
+      ['<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6 15.4 6.4M8.6 13.4l6.8 4.2" fill="none"/></svg>', "অন্য অ্যাপে", function () { nativeShare({ title: "জনদূত", text: MSG }).catch(function () {}); }]
+    ];
+    sheet.innerHTML =
+      '<div class="jd-shead"><svg width="44" height="49" viewBox="0 0 72 80" aria-hidden="true"><defs><linearGradient id="jdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1fa36f"/><stop offset="1" stop-color="#075238"/></linearGradient></defs><path d="M36 3 66 14v24c0 19-12 33-30 39C18 71 6 57 6 38V14z" fill="url(#jdg)" stroke="#e8a317" stroke-width="3"/><rect x="22" y="20" width="28" height="34" rx="3" fill="#fff"/><path d="M27 29h18M27 35h18M27 41h11" stroke="#0b6b4a" stroke-width="2.5" stroke-linecap="round"/><circle cx="46" cy="50" r="11" fill="#e8a317"/><path d="m40.5 50 4 4 7-8" fill="none" stroke="#0d1814" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '<div><h2>জনদূত শেয়ার করুন</h2><p>বন্ধু ও পরিবারকে জানান: অধিকার জানুন, দরখাস্ত লিখুন, সঠিক দপ্তরে পাঠান। অ্যাপটি ফ্রি।</p></div></div>' +
+      '<div class="jd-qr"><div class="jd-qrb">' + qrSvg(APK_URL, 132) + '</div><div><b>স্ক্যান করে নামান</b><p>পাশের জনের ফোনের ক্যামেরা বা QR স্ক্যানার দিয়ে এই কোড স্ক্যান করালে সরাসরি অ্যাপ নামার লিংক খুলবে।</p></div></div>' +
+      '<div class="jd-sg"></div><button type="button" class="jd-sx">বন্ধ করুন</button>';
+    var grid = sheet.querySelector(".jd-sg");
+    opts.forEach(function (o) {
+      var b = document.createElement("button"); b.type = "button";
+      b.innerHTML = '<i>' + o[0] + '</i><small>' + o[1] + '</small>';
+      b.addEventListener("click", function () { o[2](b); });
+      grid.appendChild(b);
     });
-  });
+    sheet.querySelector(".jd-sx").addEventListener("click", close);
+    scrim.addEventListener("click", close);
+    document.body.appendChild(scrim);
+    document.body.appendChild(sheet);
+  }
+  sbtn.addEventListener("click", openShare);
 
   /* ---------- new version notice (like FreeLearn Hub) ---------- */
   setTimeout(function () {
@@ -128,4 +295,4 @@
     }).catch(function () {});
   }, 2500);
 })();
- 
+     
