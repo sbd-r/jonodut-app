@@ -1,0 +1,125 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+      KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get the website files (sbd-r/jonodut)
+        uses: actions/checkout@v4
+        with:
+          repository: sbd-r/jonodut
+          path: site
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prepare web files for the app
+        run: |
+          mkdir -p www
+          cp -r site/. www/
+          rm -rf www/.git www/.github
+          cp native.js native.css www/
+          python3 - <<'PY'
+          import glob
+          for p in glob.glob("www/**/*.html", recursive=True):
+              s = open(p, encoding="utf-8").read()
+              # inside the app the page address is https://localhost, so share links must use the real site
+              s = s.replace("/^https?:$/.test(location.protocol)", "false")
+              if "native.css" not in s and "</head>" in s:
+                  s = s.replace("</head>", '<link rel="stylesheet" href="native.css">\n</head>', 1)
+              # the page script can contain the text </body> inside a string, so use the LAST one
+              if "native.js" not in s and "</body>" in s:
+                  i = s.rfind("</body>")
+                  s = s[:i] + '<script src="native.js"></script>\n' + s[i:]
+              open(p, "w", encoding="utf-8").write(s)
+          print("pages prepared")
+          PY
+
+      - name: Create Android project
+        run: npx cap add android
+
+      - name: Icons
+        run: |
+          pip install pillow
+          python3 make_icons.py
+
+      - name: Sync web files
+        run: npx cap sync android
+
+      - name: Version number
+        env:
+          RUN: ${{ github.run_number }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          g = "android/app/build.gradle"
+          t = open(g).read()
+          n = os.environ["RUN"]
+          t = re.sub(r"versionCode \d+", "versionCode " + n, t, count=1)
+          t = re.sub(r'versionName "[^"]*"', 'versionName "1.0.' + n + '"', t, count=1)
+          open(g, "w").write(t)
+          print("version updated")
+          PY
+
+      - name: Build
+        run: |
+          cd android
+          chmod +x gradlew
+          if [ -n "$KS_B64" ]; then ./gradlew assembleRelease; else ./gradlew assembleDebug; fi
+
+      - name: Sign release APK
+        if: env.KS_B64 != ''
+        run: |
+          set -e
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "$KS_B64" | base64 -d > release.jks
+          "$BT/zipalign" -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          "$BT/apksigner" sign --ks release.jks --ks-pass env:KS_PASS --ks-key-alias "$KEY_ALIAS" --key-pass env:KS_PASS --out jonodut-release.apk aligned.apk
+          "$BT/apksigner" verify --verbose jonodut-release.apk | head -4
+          rm -f release.jks aligned.apk
+
+      - name: Upload signed APK
+        if: env.KS_B64 != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: jonodut-apk
+          path: jonodut-release.apk
+
+      - name: Publish download link (GitHub Release)
+        if: env.KS_B64 != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: জনদূত (latest)
+          make_latest: true
+          files: jonodut-release.apk
+
+      - name: Upload debug APK (no signing key set yet)
+        if: env.KS_B64 == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: jonodut-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          
