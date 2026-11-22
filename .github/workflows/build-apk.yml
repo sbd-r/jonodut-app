@@ -4,9 +4,34 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+  schedule:
+    - cron: "17 */3 * * *"   # every 3 hours: rebuilds only if the website (sbd-r/jonodut) changed
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      go: ${{ steps.c.outputs.go }}
+    steps:
+      - id: c
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          SITE=$(git ls-remote https://github.com/sbd-r/jonodut.git HEAD | cut -f1)
+          LAST=$(gh release view latest --repo "${{ github.repository }}" --json body -q .body 2>/dev/null || true)
+          echo "website commit: $SITE"
+          if [ "$EVENT" = "schedule" ] && echo "$LAST" | grep -q "site:$SITE"; then
+            echo "website unchanged, nothing to build"; echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: check
+    if: needs.check.outputs.go == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -22,6 +47,10 @@ jobs:
         with:
           repository: sbd-r/jonodut
           path: site
+
+      - name: Remember website version
+        id: site
+        run: echo "sha=$(git -C site rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4
         with:
@@ -164,6 +193,7 @@ jobs:
         with:
           tag_name: latest
           name: জনদূত ${{ github.run_number }}
+          body: "site:${{ steps.site.outputs.sha }}"
           make_latest: true
           files: jonodut-release.apk
 
