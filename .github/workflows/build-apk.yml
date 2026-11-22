@@ -36,17 +36,25 @@ jobs:
         run: npm install
 
       - name: Prepare web files for the app
+        env:
+          RUN: ${{ github.run_number }}
         run: |
           mkdir -p www
           cp -r site/. www/
           rm -rf www/.git www/.github
-          cp native.js native.css www/
+          cp native.css www/
+          printf 'window.JD_BUILD=%s;\n' "$RUN" | cat - native.js > www/native.js
           python3 - <<'PY'
           import glob
           for p in glob.glob("www/**/*.html", recursive=True):
               s = open(p, encoding="utf-8").read()
               # inside the app the page address is https://localhost, so share links must use the real site
               s = s.replace("/^https?:$/.test(location.protocol)", "false")
+              # allow the new-version check (GitHub releases) in the page security policy
+              s = s.replace("connect-src 'self'", "connect-src 'self' https://api.github.com")
+              # PDF: Android WebView cannot print from a hidden frame, so hand the letter to the phone's print/Save-as-PDF screen
+              s = s.replace("f.contentWindow.print()",
+                  "(window.AndroidPrint?AndroidPrint.printHtml(f.contentWindow.document.documentElement.outerHTML,f.contentWindow.document.title||'jonodut'):f.contentWindow.print())")
               if "native.css" not in s and "</head>" in s:
                   s = s.replace("</head>", '<link rel="stylesheet" href="native.css">\n</head>', 1)
               # the page script can contain the text </body> inside a string, so use the LAST one
@@ -59,6 +67,49 @@ jobs:
 
       - name: Create Android project
         run: npx cap add android
+
+      - name: Print / Save-as-PDF bridge
+        run: |
+          cat > android/app/src/main/java/com/jonodut/app/MainActivity.java <<'JAVA'
+          package com.jonodut.app;
+
+          import android.os.Bundle;
+          import android.print.PrintAttributes;
+          import android.print.PrintManager;
+          import android.webkit.JavascriptInterface;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+            private WebView printView;
+
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+              getBridge().getWebView().addJavascriptInterface(new Object() {
+                @JavascriptInterface
+                public void printHtml(final String html, final String title) {
+                  runOnUiThread(new Runnable() {
+                    public void run() {
+                      final String name = (title == null || title.isEmpty()) ? "jonodut" : title;
+                      printView = new WebView(MainActivity.this);
+                      printView.getSettings().setJavaScriptEnabled(false);
+                      printView.setWebViewClient(new WebViewClient() {
+                        @Override
+                        public void onPageFinished(WebView v, String url) {
+                          PrintManager pm = (PrintManager) getSystemService(PRINT_SERVICE);
+                          pm.print(name, v.createPrintDocumentAdapter(name), new PrintAttributes.Builder().build());
+                        }
+                      });
+                      printView.loadDataWithBaseURL("https://localhost/", html, "text/html", "utf-8", null);
+                    }
+                  });
+                }
+              }, "AndroidPrint");
+            }
+          }
+          JAVA
 
       - name: Icons
         run: |
@@ -112,7 +163,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: জনদূত (latest)
+          name: জনদূত ${{ github.run_number }}
           make_latest: true
           files: jonodut-release.apk
 
