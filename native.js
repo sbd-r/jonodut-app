@@ -3,7 +3,7 @@
    1) colour themes (button bottom-right)  2) reserved ad places  3) hides the "install app" button inside the app  4) app-share button  5) new-version notice  6) PDF/print + share bridge. */
 (function () {
   /* AdMob: শুরুতে টেস্ট ব্যানার (Google-এর টেস্ট আইডি)। আসল আইডি পেলে bannerId বদলান এবং testMode:false করুন। */
-  var ADS = { enabled: true, testMode: true, bannerId: "ca-app-pub-5053693807902862/7430389029" };
+  var ADS = { enabled: false, testMode: true, bannerId: "ca-app-pub-5053693807902862/7430389029" };
   var KEY = "jd-theme";
   var THEMES = [
     ["auto", "ফোন অনুযায়ী"],
@@ -312,4 +312,4 @@
   /* ---------- অ্যাপ সম্পর্কে: সংস্করণ ও তথ্য ---------- */
   (function () {
     function row(k, v) {
-      return '<tr><td style="padding:6px 8px 6px 0;opacity:.7;width:40%;vertical-align:top">' + k + '</td><td style="pa
+      return '<tr><td style="padding:6px 8px 6px 0;opacity:.7;width:40%;vertical-align:top">' + k + '</td><td style="p
