@@ -140,6 +140,14 @@ jobs:
           }
           JAVA
 
+      - name: AdMob app id (plugin reads it from this resource)
+        env:
+          ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
+        run: |
+          ID="${ADMOB_APP_ID:-ca-app-pub-3940256099942544~3347511713}"
+          mkdir -p android/app/src/main/res/values
+          printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="admob_app_id">%s</string>\n</resources>\n' "$ID" > android/app/src/main/res/values/admob.xml
+
       - name: Icons
         run: |
           pip install pillow
