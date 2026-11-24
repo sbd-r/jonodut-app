@@ -2,7 +2,8 @@
 /* জনদূত app only. Injected into every page by the build; the website never loads this file.
    1) colour themes (button bottom-right)  2) reserved ad places  3) hides the "install app" button inside the app  4) app-share button  5) new-version notice  6) PDF/print + share bridge. */
 (function () {
-  var ADS = { enabled: false };          /* turn on later, when AdMob is wired in */
+  /* AdMob: শুরুতে টেস্ট ব্যানার (Google-এর টেস্ট আইডি)। আসল আইডি পেলে bannerId বদলান এবং testMode:false করুন। */
+  var ADS = { enabled: true, testMode: true, bannerId: "ca-app-pub-5053693807902862/7430389029" };
   var KEY = "jd-theme";
   var THEMES = [
     ["auto", "ফোন অনুযায়ী"],
@@ -24,7 +25,20 @@
   if (inst) inst.style.display = "none";
 
   /* reserved ad places: top and bottom */
-  if (ADS.enabled) document.documentElement.setAttribute("data-jd-ads", "on");
+  /* ব্যানার: পর্দার নিচে ভাসবে, তাই নিচে জায়গা রাখা হয় */
+  function showBanner() {
+    var AM = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+    if (!AM) return;
+    AM.initialize({ initializeForTesting: !!ADS.testMode }).then(function () {
+      return AM.showBanner({ adId: ADS.bannerId, adSize: "BANNER", position: "BOTTOM_CENTER", margin: 0, isTesting: !!ADS.testMode });
+    }).then(function () {
+      document.body.style.paddingBottom = "60px";
+      var s = document.createElement("style");
+      s.textContent = "#bar{bottom:50px!important}#jd-share-btn{bottom:64px!important}";
+      document.head.appendChild(s);
+    }).catch(function () {});
+  }
+  if (ADS.enabled) document.addEventListener("DOMContentLoaded", function () { setTimeout(showBanner, 800); });
   var main = document.querySelector("main");
   if (main) {
     var top = document.createElement("div");
@@ -295,4 +309,4 @@
     }).catch(function () {});
   }, 2500);
 })();
-     
+   
