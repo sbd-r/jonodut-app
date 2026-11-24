@@ -308,5 +308,8 @@
       document.body.appendChild(box);
     }).catch(function () {});
   }, 2500);
-})();
-   
+
+  /* ---------- অ্যাপ সম্পর্কে: সংস্করণ ও তথ্য ---------- */
+  (function () {
+    function row(k, v) {
+      return '<tr><td style="padding:6px 8px 6px 0;opacity:.7;width:40%;vertical-align:top">' + k + '</td><td style="pa
