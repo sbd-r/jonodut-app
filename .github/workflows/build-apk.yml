@@ -97,6 +97,24 @@ jobs:
       - name: Create Android project
         run: npx cap add android
 
+      - name: AdMob app id (resource + manifest entry)
+        env:
+          ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
+        run: |
+          ID="${ADMOB_APP_ID:-ca-app-pub-3940256099942544~3347511713}"
+          mkdir -p android/app/src/main/res/values
+          printf '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="admob_app_id">%s</string>\n</resources>\n' "$ID" > android/app/src/main/res/values/admob.xml
+          python3 - <<'PY'
+          p = "android/app/src/main/AndroidManifest.xml"
+          s = open(p, encoding="utf-8").read()
+          key = "com.google.android.gms.ads.APPLICATION_ID"
+          if key not in s:
+              m = '<meta-data android:name="' + key + '" android:value="@string/admob_app_id"/>'
+              s = s.replace("</application>", "    " + m + "\n    </application>", 1)
+              open(p, "w", encoding="utf-8").write(s)
+          print(open(p, encoding="utf-8").read())
+          PY
+
       - name: Print / Save-as-PDF bridge
         run: |
           cat > android/app/src/main/java/com/jonodut/app/MainActivity.java <<'JAVA'
