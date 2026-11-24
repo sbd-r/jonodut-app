@@ -52,7 +52,7 @@
   /* theme button and sheet */
   var btn = document.createElement("button");
   btn.id = "jd-theme-btn"; btn.type = "button"; btn.setAttribute("aria-label", "থিম");
-  btn.textContent = "🎨";
+  btn.innerHTML = "<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><circle cx='12' cy='12' r='9'/><path d='M12 3a9 9 0 0 1 0 18z' fill='currentColor'/></svg>";
   var head = document.querySelector("header");
   if (head) {
     /* top-right corner of the page header: never covers the buttons at the bottom */
@@ -69,8 +69,8 @@
     var cur = get();
     var scrim = document.createElement("div"); scrim.className = "jd-scrim";
     var sheet = document.createElement("div"); sheet.className = "jd-sheet";
-    sheet.innerHTML = "<h2>থিম বেছে নিন</h2>" + THEMES.map(function (x) {
-      return '<button type="button" data-t="' + x[0] + '" aria-current="' + (cur === x[0]) + '"><span>' + x[1] + '</span><span>' + (cur === x[0] ? "✓" : "") + "</span></button>";
+    sheet.innerHTML = "<h2>থিম</h2>" + THEMES.map(function (x) {
+      return '<button type="button" data-t="' + x[0] + '" aria-current="' + (cur === x[0]) + '"><span class="jd-tn"><i class="jd-sw jd-sw-' + x[0] + '"></i>' + x[1] + '</span><span class="jd-ck">' + (cur === x[0] ? "<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M5 12.5 10 17 19 7.5'/></svg>" : "") + "</span></button>";
     }).join("");
     sheet.addEventListener("click", function (e) {
       var b = e.target.closest("[data-t]");
@@ -88,6 +88,7 @@
   /* ---------- extra css (kept here so only this file changes) ---------- */
   var st = document.createElement("style");
   st.textContent =
+      ".jd-sw{display:inline-block;width:22px;height:22px;border-radius:50%;margin-right:12px;vertical-align:middle;border:1px solid var(--line)}.jd-sw-auto{background:linear-gradient(90deg,#f3f6f4 50%,#0b1210 50%)}.jd-sw-light{background:#f3f6f4}.jd-sw-night{background:#0b1210}.jd-sw-blue{background:#1f5fbf}.jd-sw-cream{background:#fbf6ea}.jd-tn{display:flex;align-items:center}.jd-ck{color:var(--g);display:flex}#jd-theme-btn svg,#jd-share-btn svg,#jd-about-btn svg{display:block}" +
     "#jd-share-btn{display:flex;align-items:center;justify-content:center;padding:0}#jd-share-btn.jd-hbtn{position:absolute;top:10px;left:10px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:19px;line-height:1;z-index:5}" +
     "#jd-share-btn{position:fixed;left:14px;bottom:14px;z-index:60;width:50px;height:50px;border:0;border-radius:50%;background:var(--g);color:#fff;font-size:22px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.25)}" +
     ".jd-shr .jd-shead{display:flex;gap:12px;align-items:center;margin-bottom:12px}.jd-shr .jd-shead h2{margin:0 0 2px}.jd-shr .jd-shead p{margin:0;font-size:13px;line-height:1.5;color:var(--mut)}" +
@@ -120,7 +121,7 @@
   /* ---------- share the app ---------- */
   var sbtn = document.createElement("button");
   sbtn.id = "jd-share-btn"; sbtn.type = "button"; sbtn.setAttribute("aria-label", "অ্যাপ শেয়ার করুন");
-  sbtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6 15.4 6.4M8.6 13.4l6.8 4.2" fill="none"/></svg>';
+  sbtn.innerHTML = "<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 3v12'/><path d='M7.5 7.5 12 3l4.5 4.5'/><path d='M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7'/></svg>";
   var hd = document.querySelector("header");
   if (hd) { sbtn.className = "jd-hbtn"; hd.appendChild(sbtn); } else { document.body.appendChild(sbtn); }
   /* ---------- tiny offline QR code maker (byte mode, level L, versions 1-9) ---------- */
@@ -249,67 +250,26 @@
     return '<svg width="' + px + '" height="' + px + '" viewBox="0 0 ' + s + " " + s + '" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="' + s + '" height="' + s + '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>';
   }
 
-  var MSG = "🛡️ জনদূত — আপনার কথা সঠিক দপ্তরে\n✅ অধিকার জানুন, দরখাস্ত লিখুন, সরাসরি পাঠান\n\n📲 অ্যান্ড্রয়েড অ্যাপ (ফ্রি): " + APK_URL + "\n🌐 ওয়েবসাইট: " + SITE;
+  var MSG = "জনদূত — আপনার কথা সঠিক দপ্তরে\nঅধিকার জানুন, দরখাস্ত লিখুন, সরাসরি পাঠান\n\nঅ্যান্ড্রয়েড অ্যাপ (ফ্রি): " + APK_URL + "\nওয়েবসাইট: " + SITE;
   function enc(x) { return encodeURIComponent(x); }
   function openShare() {
     close();
     var scrim = document.createElement("div"); scrim.className = "jd-scrim";
     var sheet = document.createElement("div"); sheet.className = "jd-sheet jd-shr";
     var opts = [
-      ["💬", "হোয়াটসঅ্যাপ", function () { window.open("https://wa.me/?text=" + enc(MSG), "_blank"); }],
-      ["✈️", "টেলিগ্রাম", function () { window.open("https://t.me/share/url?url=" + enc(APK_URL) + "&text=" + enc("জনদূত — আপনার কথা সঠিক দপ্তরে। ফ্রি অ্যাপ:"), "_blank"); }],
-      ["📘", "ফেসবুক", function () { window.open("https://www.facebook.com/sharer/sharer.php?u=" + enc(SITE), "_blank"); }],
-      ["✉️", "এসএমএস", function () { location.href = "sms:?&body=" + enc(MSG); }],
-      ["📧", "ইমেইল", function () { location.href = "mailto:?subject=" + enc("জনদূত অ্যাপ") + "&body=" + enc(MSG); }],
-      ["📋", "লিংক কপি", function (btn) {
-        var done = function () { var t = btn.querySelector("small"); t.textContent = "কপি হয়েছে ✅"; };
+      ["<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4A2.5 2.5 0 0 1 4 13.5z'/></svg>", "হোয়াটসঅ্যাপ", function () { window.open("https://wa.me/?text=" + enc(MSG), "_blank"); }],
+      ["<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M21 4 3.5 10.8l5.6 2.1L11 19l3.2-3.6 4.3 3.2z'/><path d='M9.1 12.9 16 7.5'/></svg>", "টেলিগ্রাম", function () { window.open("https://t.me/share/url?url=" + enc(APK_URL) + "&text=" + enc("জনদূত — আপনার কথা সঠিক দপ্তরে। ফ্রি অ্যাপ:"), "_blank"); }],
+      ["<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><circle cx='12' cy='12' r='9'/><path d='M3 12h18'/><path d='M12 3c2.5 2.6 3.7 5.6 3.7 9s-1.2 6.4-3.7 9c-2.5-2.6-3.7-5.6-3.7-9S9.5 5.6 12 3z'/></svg>", "ফেসবুক", function () { window.open("https://www.facebook.com/sharer/sharer.php?u=" + enc(SITE), "_blank"); }],
+      ["<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 5h16v11H8l-4 4z'/></svg>", "এসএমএস", function () { location.href = "sms:?&body=" + enc(MSG); }],
+      ["<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='3' y='5' width='18' height='14' rx='2'/><path d='m4 7 8 6 8-6'/></svg>", "ইমেইল", function () { location.href = "mailto:?subject=" + enc("জনদূত অ্যাপ") + "&body=" + enc(MSG); }],
+      ["<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><rect x='8' y='8' width='12' height='12' rx='2'/><path d='M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2'/></svg>", "লিংক কপি", function (btn) {
+        var done = function () { var t = btn.querySelector("small"); t.textContent = "কপি হয়েছে"; };
         try { navigator.clipboard.writeText(MSG).then(done, done); } catch (e) {
           var ta = document.createElement("textarea"); ta.value = MSG; document.body.appendChild(ta); ta.select();
           try { document.execCommand("copy"); } catch (x) {} ta.remove(); done();
         }
       }],
-      ['<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6 15.4 6.4M8.6 13.4l6.8 4.2" fill="none"/></svg>', "অন্য অ্যাপে", function () { nativeShare({ title: "জনদূত", text: MSG }).catch(function () {}); }]
+      ["<svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 3v12'/><path d='M7.5 7.5 12 3l4.5 4.5'/><path d='M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7'/></svg>", "অন্য অ্যাপে", function () { nativeShare({ title: "জনদূত", text: MSG }).catch(function () {}); }]
     ];
     sheet.innerHTML =
-      '<div class="jd-shead"><svg width="44" height="49" viewBox="0 0 72 80" aria-hidden="true"><defs><linearGradient id="jdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1fa36f"/><stop offset="1" stop-color="#075238"/></linearGradient></defs><path d="M36 3 66 14v24c0 19-12 33-30 39C18 71 6 57 6 38V14z" fill="url(#jdg)" stroke="#e8a317" stroke-width="3"/><rect x="22" y="20" width="28" height="34" rx="3" fill="#fff"/><path d="M27 29h18M27 35h18M27 41h11" stroke="#0b6b4a" stroke-width="2.5" stroke-linecap="round"/><circle cx="46" cy="50" r="11" fill="#e8a317"/><path d="m40.5 50 4 4 7-8" fill="none" stroke="#0d1814" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-      '<div><h2>জনদূত শেয়ার করুন</h2><p>বন্ধু ও পরিবারকে জানান: অধিকার জানুন, দরখাস্ত লিখুন, সঠিক দপ্তরে পাঠান। অ্যাপটি ফ্রি।</p></div></div>' +
-      '<div class="jd-qr"><div class="jd-qrb">' + qrSvg(APK_URL, 132) + '</div><div><b>স্ক্যান করে নামান</b><p>পাশের জনের ফোনের ক্যামেরা বা QR স্ক্যানার দিয়ে এই কোড স্ক্যান করালে সরাসরি অ্যাপ নামার লিংক খুলবে।</p></div></div>' +
-      '<div class="jd-sg"></div><button type="button" class="jd-sx">বন্ধ করুন</button>';
-    var grid = sheet.querySelector(".jd-sg");
-    opts.forEach(function (o) {
-      var b = document.createElement("button"); b.type = "button";
-      b.innerHTML = '<i>' + o[0] + '</i><small>' + o[1] + '</small>';
-      b.addEventListener("click", function () { o[2](b); });
-      grid.appendChild(b);
-    });
-    sheet.querySelector(".jd-sx").addEventListener("click", close);
-    scrim.addEventListener("click", close);
-    document.body.appendChild(scrim);
-    document.body.appendChild(sheet);
-  }
-  sbtn.addEventListener("click", openShare);
-
-  /* ---------- new version notice (like FreeLearn Hub) ---------- */
-  setTimeout(function () {
-    if (typeof window.JD_BUILD !== "number") return;
-    fetch("https://api.github.com/repos/sbd-r/jonodut-app/releases/latest").then(function (r) { return r.json(); }).then(function (j) {
-      var m = /(\d+)\s*$/.exec((j && j.name) || "");
-      if (!m) return;
-      var latest = +m[1];
-      if (latest <= window.JD_BUILD) return;
-      var seen = 0; try { seen = +localStorage.getItem("jd-upd-dismissed") || 0; } catch (e) {}
-      if (seen >= latest) return;
-      var box = document.createElement("div"); box.className = "jd-upd";
-      box.innerHTML = "<b>🔔 জনদূতের নতুন সংস্করণ এসেছে</b><span>আপডেট করলে নতুন সুবিধা ও ঠিকঠাক কাজ পাবেন। পুরনো অ্যাপের ওপরেই বসবে, কিছু মুছবে না।</span>";
-      var a = document.createElement("a"); a.href = APK_URL; a.textContent = "আপডেট করুন";
-      var b = document.createElement("button"); b.type = "button"; b.textContent = "পরে";
-      b.addEventListener("click", function () { try { localStorage.setItem("jd-upd-dismissed", String(latest)); } catch (e) {} box.remove(); });
-      box.appendChild(a); box.appendChild(b);
-      document.body.appendChild(box);
-    }).catch(function () {});
-  }, 2500);
-
-  /* ---------- অ্যাপ সম্পর্কে: সংস্করণ ও তথ্য ---------- */
-  (function () {
-    function row(k, v) {
-      return '<tr><td style="padding:6px 8px 6px 0;opacity:.7;width:40%;vertical-align:top">' + k + '</td><td style="p
+      '<div class="jd-shead"><svg width="44" height="49" viewBox="0 0 72 80" aria-hidden="true"><defs><linearGradient id="jdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1fa36f"/><stop offset="1" stop-color="#075238"/></linearGradient></defs><path d="M36 3 66 14v24c0 19-12 33-30 39C18 71 6 57 6 38V14z" fill="url(#jdg)" stroke="#e8a317" stroke-width="3"/><rect x="22" y="20" width="28" height="34" rx="3" fill="#fff"/><path d="M27 29h18M27 35h18M27 41h11" stroke="#0b6b4a" stroke-width="2.5" stroke-linecap="round"/><circle cx="46" cy="50" r="11" fill="#e8a317"/><path d="m40.5 50 4 4 7-8" fill="none" stroke="#0d1814" stroke-width="3" stroke-linec
